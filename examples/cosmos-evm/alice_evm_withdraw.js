@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 const { validateSecret } = require('../evm-cosmos/shared_secret');
 
 async function main() {
-    console.log('🚀 Alice withdrawing from EVM HTCL...');
+    console.log('🚀 Alice withdrawing from EVM (Polygon Amoy) HTCL...');
 
     // Load transaction data
     let evmData;
@@ -30,12 +30,18 @@ async function main() {
     const hashlock = evmData.hashlock;
     const timelock = evmData.timelock;
     const aliceAddress = evmData.aliceAddress;
+    const destinyNetwork = evmData.destinyNetwork;
+    const destinyTokenAddress = evmData.destinyTokenAddress;
+    const destinyTokenAmount = evmData.destinyTokenAmount;
 
     console.log('HTCL Address:', htclAddress);
-    console.log('Alice Address:', aliceAddress);
+    console.log('Alice EVM Address:', aliceAddress);
     console.log('Secret:', secret);
     console.log('Hashlock:', hashlock);
     console.log('Timelock:', timelock);
+    console.log('Destiny Network:', destinyNetwork);
+    console.log('Destiny Token:', destinyTokenAddress);
+    console.log('Destiny Amount:', destinyTokenAmount);
 
     // Validate secret matches hashlock
     console.log('\n🔍 Validating secret...');
@@ -46,7 +52,7 @@ async function main() {
     }
     console.log('✅ Secret validation successful');
 
-    // Get signers
+    // Get signers (Alice and Bob both on EVM network)
     const [alice, bob] = await ethers.getSigners();
 
     // Verify Alice is the correct signer
@@ -86,8 +92,8 @@ async function main() {
     }
     console.log('✅ Timelock check passed');
 
-    // Execute Alice's withdrawal
-    console.log('\n🔄 Executing Alice\'s withdrawal...');
+    // Execute Alice's withdrawal on destiny network
+    console.log('\n🔄 Executing Alice\'s withdrawal on EVM (destiny network)...');
 
     try {
         const tx = await htcl.bobWithdraw(secret);
@@ -109,16 +115,19 @@ async function main() {
         const fs = require('fs');
         fs.writeFileSync('evm_htcl_data.json', JSON.stringify(evmData, null, 2));
 
-        console.log('\n💰 Alice successfully withdrew from EVM HTCL');
+        console.log('\n💰 Alice successfully withdrew from EVM HTCL (destiny network)');
         console.log('📋 Transaction details:');
         console.log('  - Contract:', htclAddress);
         console.log('  - Secret:', secret);
         console.log('  - Transaction:', tx.hash);
         console.log('  - Block:', receipt.blockNumber);
         console.log('  - Timestamp:', currentTime);
+        console.log('  - Network:', destinyNetwork);
+        console.log('  - Token:', destinyTokenAddress);
+        console.log('  - Amount:', destinyTokenAmount);
 
         console.log('\n📋 Next step:');
-        console.log('Bob should now withdraw from Cosmos HTCL with the same secret');
+        console.log('Bob should now withdraw from Cosmos HTCL (source network) with the same secret');
 
     } catch (error) {
         console.error('❌ Error during withdrawal:', error.message);

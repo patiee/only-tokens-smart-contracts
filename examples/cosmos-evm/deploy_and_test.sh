@@ -54,22 +54,29 @@ if [ ! -f "../evm/hardhat.config.js" ]; then
     exit 1
 fi
 
+# Check if Cosmos HTCL modules are available
+if [ ! -f "../cosmos/htcl-contract/src/msg.rs" ]; then
+    print_error "Cosmos HTCL modules not found"
+    print_status "Please ensure cosmos directory is available"
+    exit 1
+fi
+
 print_success "Prerequisites check passed"
 
-# Step 1: Alice creates HTCL on Cosmos
-print_status "Step 1: Alice creating HTCL on Cosmos..."
+# Step 1: Alice creates HTCL on Cosmos (source network) for Bob
+print_status "Step 1: Alice creating HTCL on Cosmos (source network) for Bob..."
 print_status "Running Alice's Cosmos script..."
 python3 alice_cosmos_script.py
 
 if [ $? -eq 0 ]; then
-    print_success "Alice successfully created HTCL on Cosmos"
+    print_success "Alice successfully created HTCL on Cosmos for Bob"
 else
     print_error "Failed to create HTCL on Cosmos"
     exit 1
 fi
 
-# Step 2: Bob creates HTCL on EVM
-print_status "Step 2: Bob creating HTCL on EVM..."
+# Step 2: Bob creates HTCL on EVM (destiny network - Polygon Amoy) for Alice
+print_status "Step 2: Bob creating HTCL on EVM (destiny network) for Alice..."
 cd ../evm
 
 # Install dependencies if needed
@@ -86,26 +93,26 @@ print_status "Running Bob's EVM script..."
 npx hardhat run ../examples/cosmos-evm/bob_evm_script.js --network localhost
 
 if [ $? -eq 0 ]; then
-    print_success "Bob successfully created HTCL on EVM"
+    print_success "Bob successfully created HTCL on EVM (destiny network) for Alice"
 else
     print_error "Failed to create HTCL on EVM"
     exit 1
 fi
 
-# Step 3: Alice withdraws on EVM
-print_status "Step 3: Alice withdrawing from EVM HTCL..."
+# Step 3: Alice withdraws on EVM (destiny network)
+print_status "Step 3: Alice withdrawing from EVM (destiny network)..."
 print_status "Running Alice's EVM withdrawal script..."
 npx hardhat run ../examples/cosmos-evm/alice_evm_withdraw.js --network localhost
 
 if [ $? -eq 0 ]; then
-    print_success "Alice successfully withdrew from EVM HTCL"
+    print_success "Alice successfully withdrew from EVM (destiny network)"
 else
-    print_error "Failed to withdraw from EVM HTCL"
+    print_error "Failed to withdraw from EVM"
     exit 1
 fi
 
-# Step 4: Bob withdraws on Cosmos
-print_status "Step 4: Bob withdrawing from Cosmos HTCL..."
+# Step 4: Bob withdraws on Cosmos (source network)
+print_status "Step 4: Bob withdrawing from Cosmos (source network)..."
 cd ../examples/cosmos-evm
 
 # Copy updated data files
@@ -116,9 +123,9 @@ print_status "Running Bob's Cosmos withdrawal script..."
 python3 bob_cosmos_withdraw.py
 
 if [ $? -eq 0 ]; then
-    print_success "Bob successfully withdrew from Cosmos HTCL"
+    print_success "Bob successfully withdrew from Cosmos (source network)"
 else
-    print_error "Failed to withdraw from Cosmos HTCL"
+    print_error "Failed to withdraw from Cosmos"
     exit 1
 fi
 
@@ -137,10 +144,10 @@ if [ -f "evm_htcl_data.json" ] && [ -f "cosmos_htcl_data.json" ]; then
         print_success "✅ Cross-chain HTCL transaction completed successfully!"
         echo ""
         echo "📋 Transaction Summary:"
-        echo "  1. ✅ Alice created HTCL on Cosmos"
-        echo "  2. ✅ Bob created HTCL on EVM"
-        echo "  3. ✅ Alice withdrew from EVM with secret"
-        echo "  4. ✅ Bob withdrew from Cosmos with secret"
+        echo "  1. ✅ Alice created HTCL on Cosmos (source) for Bob"
+        echo "  2. ✅ Bob created HTCL on EVM (destiny) for Alice"
+        echo "  3. ✅ Alice withdrew from EVM (destiny) with secret"
+        echo "  4. ✅ Bob withdrew from Cosmos (source) with secret"
         echo ""
         echo "🎉 All steps completed successfully!"
     else
@@ -156,7 +163,7 @@ echo ""
 print_success "Cross-chain HTCL test completed successfully!"
 echo ""
 echo "📁 Generated files:"
-echo "  - cosmos_htcl_data.json: Cosmos transaction data"
-echo "  - evm_htcl_data.json: EVM transaction data"
+echo "  - cosmos_htcl_data.json: Cosmos transaction data (source network)"
+echo "  - evm_htcl_data.json: EVM transaction data (destiny network)"
 echo ""
 echo "🔍 You can inspect the transaction data files for details" 

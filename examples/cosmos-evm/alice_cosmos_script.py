@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 
 import json
-import asyncio
+import sys
+import os
 import time
 from shared_secret import generate_secret_and_hashlock
 
-async def create_htcl_on_cosmos():
-    """Alice creates HTCL on Cosmos with a hashlock"""
+# Add the cosmos directory to the path to import HTCL modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../cosmos'))
+
+from htcl_contract.src.msg import InstantiateMsg
+
+def create_htcl_on_cosmos():
+    """Alice creates HTCL on Cosmos for Bob (both on Cosmos network)"""
     
-    print("🚀 Alice creating HTCL on Cosmos...")
+    print("🚀 Alice creating HTCL on Cosmos for Bob...")
     
     # Generate secret and hashlock
     result = generate_secret_and_hashlock()
@@ -24,23 +30,23 @@ async def create_htcl_on_cosmos():
     timelock = int(time.time()) + 3600  # 1 hour
     print(f"Timelock: {timelock}")
     
-    # Mock Alice and Bob addresses
-    alice_address = "cosmos1aliceaddress123456789"
-    bob_address = "cosmos1bobaddress123456789"
+    # Alice and Bob both have Cosmos addresses (same network)
+    alice_cosmos_address = "cosmos1aliceaddress123456789"
+    bob_cosmos_address = "cosmos1bobaddress123456789"
     
-    print(f"Alice address: {alice_address}")
-    print(f"Bob address: {bob_address}")
+    print(f"Alice Cosmos address: {alice_cosmos_address}")
+    print(f"Bob Cosmos address: {bob_cosmos_address}")
     
     # Create instantiate message for Cosmos HTCL
-    instantiate_msg = {
-        "bob": bob_address,
-        "timelock": timelock,
-        "hashlock": hashlock
-    }
+    instantiate_msg = InstantiateMsg(
+        bob=bob_cosmos_address,  # Bob is the recipient on Cosmos
+        timelock=timelock,
+        hashlock=hashlock
+    )
     
     print("📝 Creating instantiate message...")
-    print(f"Alice (creator): {alice_address}")
-    print(f"Bob (recipient): {bob_address}")
+    print(f"Alice (creator): {alice_cosmos_address}")
+    print(f"Bob (recipient): {bob_cosmos_address}")
     print(f"Timelock: {timelock}")
     print(f"Hashlock: {hashlock}")
     
@@ -48,44 +54,50 @@ async def create_htcl_on_cosmos():
     htcl_address = "cosmos1htclcontractaddress123456789"  # Mock address
     print(f"✅ HTCL deployed at: {htcl_address}")
     
-    # Save transaction data for Bob
-    transaction_data = {
-        "secret": secret,
+    # Save Cosmos HTCL data
+    cosmos_data = {
+        "htclAddress": htcl_address,
+        "creator": alice_cosmos_address,
+        "recipient": bob_cosmos_address,
+        "timelock": timelock,
         "hashlock": hashlock,
         "hashlockEVM": hashlock_evm,
-        "timelock": timelock,
-        "htclAddress": htcl_address,
-        "aliceAddress": alice_address,
-        "bobAddress": bob_address,
-        "amount": "1000000"  # Mock amount
+        "amount": "1000000",  # Mock amount in uatom
+        "secret": secret,  # Keep secret for later use
+        "destinyNetwork": "polygon-amoy",
+        "destinyTokenAddress": "0x0000000000000000000000000000000000000000",  # Native token
+        "destinyTokenAmount": "1000000000000000000"  # 1 MATIC in wei
     }
     
     # Write to file for Bob to use
     with open('cosmos_htcl_data.json', 'w') as f:
-        json.dump(transaction_data, f, indent=2)
+        json.dump(cosmos_data, f, indent=2)
     
     print("Transaction data saved to cosmos_htcl_data.json")
     
     # Verify the setup
     print("\n🔍 Verification:")
     print(f"HTCL Address: {htcl_address}")
-    print(f"Creator: {alice_address}")
-    print(f"Recipient: {bob_address}")
+    print(f"Creator (Alice): {alice_cosmos_address}")
+    print(f"Recipient (Bob): {bob_cosmos_address}")
     print(f"Hashlock: {hashlock}")
     print(f"Timelock: {timelock}")
     print(f"Secret: {secret}")
+    print(f"Destiny Network: {cosmos_data['destinyNetwork']}")
+    print(f"Destiny Token: {cosmos_data['destinyTokenAddress']}")
+    print(f"Destiny Amount: {cosmos_data['destinyTokenAmount']}")
     
-    print("\n✅ Alice successfully created HTCL on Cosmos")
+    print("\n✅ Alice successfully created HTCL on Cosmos for Bob")
     print("📋 Next steps:")
     print("1. Share cosmos_htcl_data.json with Bob")
-    print("2. Bob should create HTCL on EVM with the same hashlock")
+    print("2. Bob should create HTCL on EVM (Polygon Amoy) for Alice")
     print("3. Alice will withdraw on EVM with the secret")
     print("4. Bob will withdraw on Cosmos with the secret")
     
-    return transaction_data
+    return cosmos_data
 
-async def main():
-    await create_htcl_on_cosmos()
+def main():
+    create_htcl_on_cosmos()
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    main() 

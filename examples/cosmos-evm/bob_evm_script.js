@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 
 async function main() {
-    console.log('🚀 Bob creating HTCL on EVM...');
+    console.log('🚀 Bob creating HTCL on EVM (Polygon Amoy) for Alice...');
 
     // Load transaction data from Alice's Cosmos HTCL
     let cosmosData;
@@ -16,15 +16,15 @@ async function main() {
     // Extract data from Cosmos HTCL
     const hashlockEVM = cosmosData.hashlockEVM;
     const timelock = cosmosData.timelock;
-    const aliceAddress = cosmosData.aliceAddress;
-    const bobAddress = cosmosData.bobAddress;
-    const amount = cosmosData.amount;
+    const destinyNetwork = cosmosData.destinyNetwork;
+    const destinyTokenAddress = cosmosData.destinyTokenAddress;
+    const destinyTokenAmount = cosmosData.destinyTokenAmount;
 
     console.log('Hashlock (EVM):', hashlockEVM);
     console.log('Timelock:', timelock);
-    console.log('Alice address:', aliceAddress);
-    console.log('Bob address:', bobAddress);
-    console.log('Amount:', amount);
+    console.log('Destiny Network:', destinyNetwork);
+    console.log('Destiny Token Address:', destinyTokenAddress);
+    console.log('Destiny Token Amount:', destinyTokenAmount);
 
     // Validate hashlock format
     if (!hashlockEVM || !hashlockEVM.startsWith('0x') || hashlockEVM.length !== 66) {
@@ -32,17 +32,19 @@ async function main() {
         return;
     }
 
-    // Get signers
-    const [alice, bob] = await ethers.getSigners();
-    console.log('Alice signer address:', alice.address);
-    console.log('Bob signer address:', bob.address);
+    // Alice and Bob both have EVM addresses (same network - Polygon Amoy)
+    const aliceEvmAddress = "0xAliceAddress123456789abcdef";
+    const bobEvmAddress = "0xBobAddress123456789abcdef";
 
-    // Deploy HTCL contract
+    console.log('Alice EVM address:', aliceEvmAddress);
+    console.log('Bob EVM address:', bobEvmAddress);
+
+    // Deploy HTCL contract on Polygon Amoy
     const HTCL = await ethers.getContractFactory('HTCL');
-    const htclAmount = ethers.parseEther('1.0'); // 1 ETH
+    const htclAmount = ethers.parseEther('1.0'); // 1 MATIC
 
-    console.log('Deploying HTCL contract...');
-    const htcl = await HTCL.deploy(alice.address, timelock, hashlockEVM, {
+    console.log('Deploying HTCL contract on Polygon Amoy...');
+    const htcl = await HTCL.deploy(aliceEvmAddress, timelock, hashlockEVM, {
         value: htclAmount
     });
 
@@ -68,10 +70,16 @@ async function main() {
         hashlockCosmos: cosmosData.hashlock,
         timelock: timelock,
         htclAddress: htclAddress,
-        aliceAddress: alice.address,
-        bobAddress: bob.address,
+        aliceAddress: aliceEvmAddress,
+        bobAddress: bobEvmAddress,
         amount: ethers.formatEther(htclAmount),
-        cosmosHtclAddress: cosmosData.htclAddress
+        cosmosHtclAddress: cosmosData.htclAddress,
+        destinyNetwork: destinyNetwork,
+        destinyTokenAddress: destinyTokenAddress,
+        destinyTokenAmount: destinyTokenAmount,
+        sourceNetwork: "cosmos",
+        sourceTokenAddress: "uatom",
+        sourceTokenAmount: cosmosData.amount
     };
 
     // Write to file
@@ -86,8 +94,12 @@ async function main() {
     console.log('Shared hashlock:', hashlockEVM);
     console.log('Shared timelock:', timelock);
     console.log('Secret:', cosmosData.secret);
+    console.log('Source Network: Cosmos');
+    console.log('Destiny Network:', destinyNetwork);
+    console.log('Source Token: uatom');
+    console.log('Destiny Token: MATIC');
 
-    console.log('\n✅ Bob successfully created HTCL on EVM');
+    console.log('\n✅ Bob successfully created HTCL on EVM (Polygon Amoy) for Alice');
     console.log('📋 Next steps:');
     console.log('1. Alice will withdraw on EVM with the secret');
     console.log('2. Bob will withdraw on Cosmos with the secret');
