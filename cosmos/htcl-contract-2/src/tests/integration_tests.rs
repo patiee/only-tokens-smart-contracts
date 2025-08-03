@@ -1,9 +1,8 @@
 use cosmwasm_std::{
-    coins, Addr, BankMsg, BlockInfo, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    SubMsg, Timestamp, Uint128, WasmMsg,
+    coins, Addr, BankMsg, BlockInfo, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg,
+    Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw_multi_test::{App, Bank, Contract, ContractWrapper, Executor};
 
 use htcl_contract::contract::{execute, instantiate, query};
 use htcl_contract::error::ContractError;
@@ -60,13 +59,7 @@ fn test_instantiate() {
     let info = mock_info("alice", &[]);
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     assert_eq!(res.messages.len(), 0);
     assert_eq!(res.attributes[0].key, "method");
@@ -92,12 +85,7 @@ fn test_instantiate_invalid_timelock() {
     let info = mock_info("alice", &[]);
     let env = mock_env(1, 100); // Current time > timelock
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    );
+    let res = instantiate(app.deps_mut(), env, info, msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::InvalidTimelock {});
@@ -122,12 +110,7 @@ fn test_instantiate_invalid_hashlock() {
     let info = mock_info("alice", &[]);
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    );
+    let res = instantiate(app.deps_mut(), env, info, msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::InvalidHashlock {});
@@ -156,13 +139,7 @@ fn test_bob_withdraw_success() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Bob withdraws with correct secret
     let withdraw_msg = ExecuteMsg::BobWithdraw {
@@ -172,12 +149,7 @@ fn test_bob_withdraw_success() {
     let info = mock_info("bob", &[]);
     let env = mock_env(2, 200); // Before timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_ok());
     let res = res.unwrap();
@@ -208,13 +180,7 @@ fn test_bob_withdraw_wrong_secret() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Bob withdraws with wrong secret
     let withdraw_msg = ExecuteMsg::BobWithdraw {
@@ -224,12 +190,7 @@ fn test_bob_withdraw_wrong_secret() {
     let info = mock_info("bob", &[]);
     let env = mock_env(2, 200); // Before timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::InvalidSecret {});
@@ -258,13 +219,7 @@ fn test_bob_withdraw_after_timelock() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Bob withdraws after timelock
     let withdraw_msg = ExecuteMsg::BobWithdraw {
@@ -274,12 +229,7 @@ fn test_bob_withdraw_after_timelock() {
     let info = mock_info("bob", &[]);
     let env = mock_env(2, 1100); // After timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::TimelockExpired {});
@@ -308,13 +258,7 @@ fn test_alice_withdraw_success() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Alice withdraws after timelock
     let withdraw_msg = ExecuteMsg::AliceWithdraw {};
@@ -322,12 +266,7 @@ fn test_alice_withdraw_success() {
     let info = mock_info("alice", &[]);
     let env = mock_env(2, 1100); // After timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_ok());
     let res = res.unwrap();
@@ -357,13 +296,7 @@ fn test_alice_withdraw_before_timelock() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Alice withdraws before timelock
     let withdraw_msg = ExecuteMsg::AliceWithdraw {};
@@ -371,12 +304,7 @@ fn test_alice_withdraw_before_timelock() {
     let info = mock_info("alice", &[]);
     let env = mock_env(2, 200); // Before timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::TimelockNotExpired {});
@@ -406,13 +334,7 @@ fn test_unauthorized_withdrawal() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Charlie tries to withdraw (unauthorized)
     let withdraw_msg = ExecuteMsg::BobWithdraw {
@@ -422,12 +344,7 @@ fn test_unauthorized_withdrawal() {
     let info = mock_info("charlie", &[]);
     let env = mock_env(2, 200); // Before timelock
 
-    let res = execute(
-        app.deps_mut(),
-        env,
-        info,
-        withdraw_msg,
-    );
+    let res = execute(app.deps_mut(), env, info, withdraw_msg);
 
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), ContractError::Unauthorized {});
@@ -453,13 +370,7 @@ fn test_query_config() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Query config
     let query_msg = QueryMsg::GetConfig {};
@@ -493,13 +404,7 @@ fn test_query_timelock_expired() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Query before timelock
     let query_msg = QueryMsg::IsTimelockExpired {};
@@ -538,13 +443,7 @@ fn test_query_valid_secret() {
     let info = mock_info("alice", &coins(100, "atom"));
     let env = mock_env(1, 100);
 
-    let res = instantiate(
-        app.deps_mut(),
-        env,
-        info,
-        msg,
-    )
-    .unwrap();
+    let res = instantiate(app.deps_mut(), env, info, msg).unwrap();
 
     // Query with correct secret
     let query_msg = QueryMsg::IsValidSecret {
@@ -563,4 +462,4 @@ fn test_query_valid_secret() {
     assert!(res.is_ok());
     let valid: bool = serde_json::from_slice(&res.unwrap()).unwrap();
     assert_eq!(valid, false);
-} 
+}

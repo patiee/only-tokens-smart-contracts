@@ -67,8 +67,11 @@ async function main() {
     console.log('Alice:', contractInfo[0]);
     console.log('Bob:', contractInfo[1]);
     console.log('Timelock:', contractInfo[2].toString());
-    console.log('Hashlock:', contractInfo[3]);
-    console.log('Balance:', ethers.formatEther(contractInfo[5]));
+    console.log('Hashlock (EVM):', contractInfo[3]);
+    console.log('Hashlock (Cosmos):', contractInfo[4]);
+    console.log('Hashlock (Dogecoin):', contractInfo[5]);
+    console.log('Amount:', ethers.formatEther(contractInfo[6]));
+    console.log('Balance:', ethers.formatEther(contractInfo[7]));
 
     // Check if timelock has expired
     const currentTime = Math.floor(Date.now() / 1000);

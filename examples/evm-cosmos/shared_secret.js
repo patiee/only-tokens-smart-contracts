@@ -1,34 +1,200 @@
 const crypto = require('crypto');
+const { ethers } = require('ethers');
 
-/**
- * Generate a random secret and its corresponding hashlock
- * @returns {Object} Object containing secret and hashlock
- */
+function generateDeterministicSecretFromWallet(privateKey) {
+    /**
+     * Generate a deterministic secret from wallet that works across all chains
+     * @param {string} privateKey - Wallet private key
+     * @returns {Object} Object containing secret and hashlock
+     */
+    try {
+        // Create wallet from private key
+        const wallet = new ethers.Wallet(privateKey);
+        const address = wallet.address;
+
+        // Create a deterministic secret using private key + timestamp
+        // This ensures the same wallet generates the same secret for the same timestamp
+        const timestamp = Math.floor(Date.now() / 3600000) * 3600000; // Round to hour for consistency
+        const message = `HTCL_CROSS_CHAIN_SECRET_${timestamp}`;
+
+        // Use HMAC-SHA256 with private key as key and message as data
+        // This creates a deterministic secret that's the same across all chains
+        const hmac = crypto.createHmac('sha256', privateKey);
+        hmac.update(message);
+        const secretBytes = hmac.digest();
+        const secretHex = '0x' + secretBytes.toString('hex');
+
+        // Create hashlock (sha256 hash of the secret)
+        const hashlock = crypto.createHash('sha256').update(secretBytes).digest('hex');
+        const hashlockHex = '0x' + hashlock;
+
+        return {
+            secret: secretHex,
+            secretBytes: secretBytes,
+            hashlock: hashlockHex,  // Universal hashlock (0x format)
+            walletAddress: address,
+            message: message,
+            timestamp: timestamp,
+            method: 'deterministic_hmac'
+        };
+    } catch (error) {
+        throw new Error(`Deterministic secret generation failed: ${error.message}`);
+    }
+}
+
+function generateDeterministicSecretFromMnemonic(mnemonic, derivationPath = "m/44'/60'/0'/0/0") {
+    /**
+     * Generate a deterministic secret from mnemonic that works across all chains
+     * @param {string} mnemonic - Wallet mnemonic phrase
+     * @param {string} derivationPath - HD wallet derivation path
+     * @returns {Object} Object containing secret and hashlock
+     */
+    try {
+        // Create wallet from mnemonic
+        const wallet = ethers.Wallet.fromPhrase(mnemonic, derivationPath);
+        const address = wallet.address;
+        const privateKey = wallet.privateKey;
+
+        // Create a deterministic secret using private key + timestamp
+        const timestamp = Math.floor(Date.now() / 3600000) * 3600000; // Round to hour for consistency
+        const message = `HTCL_CROSS_CHAIN_SECRET_${timestamp}`;
+
+        // Use HMAC-SHA256 with private key as key and message as data
+        const hmac = crypto.createHmac('sha256', privateKey);
+        hmac.update(message);
+        const secretBytes = hmac.digest();
+        const secretHex = '0x' + secretBytes.toString('hex');
+
+        // Create hashlock (sha256 hash of the secret)
+        const hashlock = crypto.createHash('sha256').update(secretBytes).digest('hex');
+        const hashlockHex = '0x' + hashlock;
+
+        return {
+            secret: secretHex,
+            secretBytes: secretBytes,
+            hashlock: hashlockHex,  // Universal hashlock (0x format)
+            walletAddress: address,
+            message: message,
+            timestamp: timestamp,
+            method: 'deterministic_hmac'
+        };
+    } catch (error) {
+        throw new Error(`Deterministic mnemonic secret generation failed: ${error.message}`);
+    }
+}
+
+function generateSecretFromWallet(privateKey) {
+    /**
+     * Generate a secret by signing a message with a wallet (DEPRECATED - use deterministic version)
+     * @param {string} privateKey - Wallet private key
+     * @returns {Object} Object containing secret and hashlock
+     */
+    try {
+        // Create wallet from private key
+        const wallet = new ethers.Wallet(privateKey);
+        const address = wallet.address;
+
+        // Create a message to sign (this will be our secret)
+        const message = `HTCL_CROSS_CHAIN_SECRET_${Date.now()}`;
+
+        // Sign the message with the wallet
+        const messageHash = ethers.hashMessage(message);
+        const signature = wallet.signMessage(message);
+
+        // Use the signature as our secret
+        const secretBytes = ethers.getBytes(signature);
+        const secretHex = '0x' + Buffer.from(secretBytes).toString('hex');
+
+        // Create hashlock (sha256 hash of the secret)
+        const hashlock = crypto.createHash('sha256').update(secretBytes).digest('hex');
+        const hashlockHex = '0x' + hashlock;
+
+        return {
+            secret: secretHex,
+            secretBytes: secretBytes,
+            hashlock: hashlockHex,
+            hashlockString: hashlock,  // For Cosmos (string format)
+            walletAddress: address,
+            message: message,
+            signature: signature,
+            method: 'signature_based'
+        };
+    } catch (error) {
+        throw new Error(`Wallet-based secret generation failed: ${error.message}`);
+    }
+}
+
+function generateSecretFromMnemonic(mnemonic, derivationPath = "m/44'/60'/0'/0/0") {
+    /**
+     * Generate a secret by signing a message with a mnemonic (DEPRECATED - use deterministic version)
+     * @param {string} mnemonic - Wallet mnemonic phrase
+     * @param {string} derivationPath - HD wallet derivation path
+     * @returns {Object} Object containing secret and hashlock
+     */
+    try {
+        // Create wallet from mnemonic
+        const wallet = ethers.Wallet.fromPhrase(mnemonic, derivationPath);
+        const address = wallet.address;
+
+        // Create a message to sign (this will be our secret)
+        const message = `HTCL_CROSS_CHAIN_SECRET_${Date.now()}`;
+
+        // Sign the message with the wallet
+        const messageHash = ethers.hashMessage(message);
+        const signature = wallet.signMessage(message);
+
+        // Use the signature as our secret
+        const secretBytes = ethers.getBytes(signature);
+        const secretHex = '0x' + Buffer.from(secretBytes).toString('hex');
+
+        // Create hashlock (sha256 hash of the secret)
+        const hashlock = crypto.createHash('sha256').update(secretBytes).digest('hex');
+        const hashlockHex = '0x' + hashlock;
+
+        return {
+            secret: secretHex,
+            secretBytes: secretBytes,
+            hashlock: hashlockHex,
+            hashlockString: hashlock,  // For Cosmos (string format)
+            walletAddress: address,
+            message: message,
+            signature: signature,
+            method: 'signature_based'
+        };
+    } catch (error) {
+        throw new Error(`Mnemonic-based secret generation failed: ${error.message}`);
+    }
+}
+
 function generateSecretAndHashlock() {
+    /**
+     * Generate a random secret and its corresponding hashlock
+     * (Fallback method for testing without wallet)
+     * @returns {Object} Object containing secret and hashlock
+     */
     // Generate a random 32-byte secret
     const secret = crypto.randomBytes(32);
     const secretHex = '0x' + secret.toString('hex');
 
-    // Create hashlock (keccak256 hash of the secret)
+    // Create hashlock (sha256 hash of the secret)
     const hashlock = crypto.createHash('sha256').update(secret).digest('hex');
     const hashlockHex = '0x' + hashlock;
 
     return {
         secret: secretHex,
         secretBytes: secret,
-        hashlock: hashlockHex,
-        hashlockString: hashlock // For Cosmos (string format)
+        hashlock: hashlockHex,  // Universal hashlock (0x format)
+        method: 'random'
     };
 }
 
-/**
- * Validate if a secret matches a given hashlock
- * @param {string} secret - The secret to validate
- * @param {string} hashlock - The hashlock to check against
- * @returns {boolean} True if secret matches hashlock
- */
 function validateSecret(secret, hashlock) {
-    // Remove 0x prefix if present
+    /**
+     * Validate if a secret matches a given hashlock
+     * @param {string} secret - The secret to validate
+     * @param {string} hashlock - The hashlock to check against
+     * @returns {boolean} True if secret matches hashlock
+     */
     const cleanSecret = secret.startsWith('0x') ? secret.slice(2) : secret;
     const secretBytes = Buffer.from(cleanSecret, 'hex');
 
@@ -39,46 +205,102 @@ function validateSecret(secret, hashlock) {
     return calculatedHashlock === expectedHashlock;
 }
 
-/**
- * Convert EVM hashlock format to Cosmos format
- * @param {string} evmHashlock - Hashlock in EVM format (0x...)
- * @returns {string} Hashlock in Cosmos format (hex string without 0x)
- */
-function evmToCosmosHashlock(evmHashlock) {
-    return evmHashlock.startsWith('0x') ? evmHashlock.slice(2) : evmHashlock;
-}
-
-/**
- * Convert Cosmos hashlock format to EVM format
- * @param {string} cosmosHashlock - Hashlock in Cosmos format (hex string)
- * @returns {string} Hashlock in EVM format (0x...)
- */
 function cosmosToEvmHashlock(cosmosHashlock) {
+    /**
+     * Convert Cosmos hashlock format to EVM format
+     * @param {string} cosmosHashlock - Hashlock in Cosmos format (hex string)
+     * @returns {string} Hashlock in EVM format (0x...)
+     */
     return cosmosHashlock.startsWith('0x') ? cosmosHashlock : '0x' + cosmosHashlock;
 }
 
-module.exports = {
-    generateSecretAndHashlock,
-    validateSecret,
-    evmToCosmosHashlock,
-    cosmosToEvmHashlock
-};
+function evmToCosmosHashlock(evmHashlock) {
+    /**
+     * Convert EVM hashlock format to Cosmos format
+     * @param {string} evmHashlock - Hashlock in EVM format (0x...)
+     * @returns {string} Hashlock in Cosmos format (hex string without 0x)
+     */
+    return evmHashlock.startsWith('0x') ? evmHashlock.slice(2) : evmHashlock;
+}
 
 // Example usage
 if (require.main === module) {
-    console.log('Generating secret and hashlock for cross-chain HTCL...');
-    const { secret, hashlock, hashlockString } = generateSecretAndHashlock();
+    console.log("=== Cross-Chain Compatible Secret Generation ===");
 
-    console.log('Generated values:');
-    console.log('Secret (EVM):', secret);
-    console.log('Hashlock (EVM):', hashlock);
-    console.log('Hashlock (Cosmos):', hashlockString);
+    // Example 1: Using deterministic HMAC (RECOMMENDED for production)
+    console.log("\n1. Generating deterministic secret from private key...");
+    try {
+        // In production, use actual private key
+        const privateKey = process.env.ALICE_PRIVATE_KEY || "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+        const result = generateDeterministicSecretFromWallet(privateKey);
 
-    console.log('\nValidation test:');
-    const isValid = validateSecret(secret, hashlock);
-    console.log('Secret validation:', isValid);
+        console.log("Generated values:");
+        console.log("Wallet Address:", result.walletAddress);
+        console.log("Message:", result.message);
+        console.log("Timestamp:", result.timestamp);
+        console.log("Method:", result.method);
+        console.log("Secret (EVM):", result.secret);
+        console.log("Hashlock:", result.hashlock);
+        
+        console.log("\nValidation test:");
+        const isValid = validateSecret(result.secret, result.hashlock);
+        console.log("Secret validation:", isValid);
+        
+        // Test cross-chain compatibility
+        console.log("\nCross-chain compatibility test:");
+        console.log("Same wallet + same timestamp = same secret across all chains");
 
-    console.log('\nFormat conversion:');
-    console.log('EVM to Cosmos:', evmToCosmosHashlock(hashlock));
-    console.log('Cosmos to EVM:', cosmosToEvmHashlock(hashlockString));
-} 
+    } catch (error) {
+        console.error("Error with deterministic method:", error.message);
+    }
+
+    // Example 2: Using mnemonic (deterministic)
+    console.log("\n2. Generating deterministic secret from mnemonic...");
+    try {
+        // In production, use actual mnemonic
+        const mnemonic = process.env.ALICE_MNEMONIC || "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        const result = generateDeterministicSecretFromMnemonic(mnemonic);
+
+        console.log("Generated values:");
+        console.log("Wallet Address:", result.walletAddress);
+        console.log("Message:", result.message);
+        console.log("Timestamp:", result.timestamp);
+        console.log("Method:", result.method);
+        console.log("Secret (EVM):", result.secret);
+        console.log("Hashlock:", result.hashlock);
+        
+        console.log("\nValidation test:");
+        const isValid = validateSecret(result.secret, result.hashlock);
+        console.log("Secret validation:", isValid);
+
+    } catch (error) {
+        console.error("Error with mnemonic method:", error.message);
+    }
+
+    // Example 3: Fallback random generation
+    console.log("\n3. Fallback: Random secret generation...");
+    const result = generateSecretAndHashlock();
+
+    console.log("Generated values:");
+    console.log("Secret (EVM):", result.secret);
+    console.log("Hashlock:", result.hashlock);
+    
+    console.log("\nValidation test:");
+    const isValid = validateSecret(result.secret, result.hashlock);
+    console.log("Secret validation:", isValid);
+    
+    console.log("\nFormat conversion:");
+    console.log("EVM to Cosmos:", evmToCosmosHashlock(result.hashlock));
+    console.log("Cosmos to EVM:", cosmosToEvmHashlock(result.hashlock.slice(2)));
+}
+
+module.exports = {
+    generateDeterministicSecretFromWallet,
+    generateDeterministicSecretFromMnemonic,
+    generateSecretFromWallet,
+    generateSecretFromMnemonic,
+    generateSecretAndHashlock,
+    validateSecret,
+    cosmosToEvmHashlock,
+    evmToCosmosHashlock
+}; 

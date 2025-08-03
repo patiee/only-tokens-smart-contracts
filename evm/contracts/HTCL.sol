@@ -6,13 +6,14 @@ pragma solidity ^0.8.19;
  * @dev A smart contract that implements hash time-locked functionality
  * - Alice (creator) can withdraw only after timelock with hashlock
  * - Bob (another person) can withdraw only before timelock with hashlock
+ * - Supports cross-chain compatibility with universal hashlock format
  */
 contract HTCL {
     // State variables
     address public immutable alice;
     address public immutable bob;
     uint256 public immutable timelock;
-    bytes32 public immutable hashlock;
+    bytes32 public immutable hashlock;  // Universal hashlock that works across all chains
     uint256 public immutable amount;
     
     // Events
@@ -46,7 +47,7 @@ contract HTCL {
      * @dev Constructor to create the HTCL
      * @param _bob The address of Bob (recipient)
      * @param _timelock The timestamp when the timelock expires
-     * @param _hashlock The hash of the secret that Bob must provide
+     * @param _hashlock The universal hashlock that works across all chains
      */
     constructor(
         address _bob,
@@ -126,7 +127,7 @@ contract HTCL {
      * @return _alice Alice's address
      * @return _bob Bob's address
      * @return _timelock Timelock expiration timestamp
-     * @return _hashlock The hashlock
+     * @return _hashlock The universal hashlock
      * @return _amount Original amount deposited
      * @return _balance Current contract balance
      */

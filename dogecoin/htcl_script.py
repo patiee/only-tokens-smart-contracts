@@ -18,7 +18,7 @@ class HTCLScript:
     alice_pubkey: str
     bob_pubkey: str
     timelock: int
-    hashlock: str
+    hashlock: str  # Universal hashlock that works across all chains
     script_hex: str
     p2sh_address: str
 
@@ -46,7 +46,7 @@ class HTCLScriptGenerator:
             alice_pubkey: Alice's public key (hex string)
             bob_pubkey: Bob's public key (hex string)
             timelock: Block height or timestamp for timelock
-            hashlock: Hash of the secret (hex string)
+            hashlock: Hash of the secret (hex string) - Dogecoin format
             
         Returns:
             HTCLScript object with the generated script

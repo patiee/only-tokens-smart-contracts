@@ -1,18 +1,57 @@
 const { ethers } = require('hardhat');
-const { generateSecretAndHashlock } = require('./shared_secret');
+const { generateDeterministicSecretFromWallet, generateDeterministicSecretFromMnemonic, generateSecretAndHashlock } = require('./shared_secret');
 
 async function main() {
-    console.log('🚀 Alice creating HTCL on EVM...');
+    console.log('🚀 Alice creating HTCL on EVM using deterministic wallet-based secret...');
 
     // Get signers
     const [alice, bob] = await ethers.getSigners();
     console.log('Alice address:', alice.address);
     console.log('Bob address:', bob.address);
 
-    // Generate secret and hashlock
-    const { secret, hashlock } = generateSecretAndHashlock();
-    console.log('Generated secret:', secret);
-    console.log('Generated hashlock:', hashlock);
+    // Method 1: Try deterministic wallet-based secret generation (RECOMMENDED for production)
+    let result;
+    try {
+        // In production, use actual wallet credentials
+        // Option A: Using private key from environment
+        const privateKey = process.env.ALICE_PRIVATE_KEY;
+        if (privateKey) {
+            console.log('🔐 Using deterministic wallet private key for secret generation...');
+            result = generateDeterministicSecretFromWallet(privateKey);
+            console.log('✅ Deterministic wallet-based secret generated successfully!');
+            console.log('Wallet Address:', result.walletAddress);
+            console.log('Message:', result.message);
+            console.log('Timestamp:', result.timestamp);
+            console.log('Method:', result.method);
+        } else {
+            // Option B: Using mnemonic from environment
+            const mnemonic = process.env.ALICE_MNEMONIC;
+            if (mnemonic) {
+                console.log('🔐 Using deterministic wallet mnemonic for secret generation...');
+                result = generateDeterministicSecretFromMnemonic(mnemonic);
+                console.log('✅ Deterministic mnemonic-based secret generated successfully!');
+                console.log('Wallet Address:', result.walletAddress);
+                console.log('Message:', result.message);
+                console.log('Timestamp:', result.timestamp);
+                console.log('Method:', result.method);
+            } else {
+                throw new Error('No wallet credentials provided');
+            }
+        }
+    } catch (error) {
+        console.log(`⚠️ Deterministic wallet-based generation failed: ${error.message}`);
+        console.log('🔄 Falling back to random secret generation...');
+
+        // Method 2: Fallback to random generation
+        result = generateSecretAndHashlock();
+        console.log('✅ Random secret generated (for testing only)');
+    }
+
+    // Extract values
+    const { secret, hashlock } = result;
+    console.log('\n📋 Generated values:');
+    console.log('Secret:', secret);
+    console.log('Hashlock:', hashlock);
 
     // Calculate timelock (1 hour from now)
     const timelock = Math.floor(Date.now() / 1000) + 3600; // 1 hour
@@ -51,7 +90,11 @@ async function main() {
         htclAddress: htclAddress,
         aliceAddress: alice.address,
         bobAddress: bob.address,
-        amount: ethers.formatEther(htclAmount)
+        amount: ethers.formatEther(htclAmount),
+        walletAddress: result.walletAddress,
+        message: result.message,
+        timestamp: result.timestamp,
+        method: result.method
     };
 
     // Write to file for Bob to use

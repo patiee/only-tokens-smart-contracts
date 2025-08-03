@@ -83,3 +83,18 @@ that have been published.
 Please replace this README file with information about your specific project. You can keep
 the `Developing.md` and `Publishing.md` files as useful references, but please set some
 proper description in the README.
+
+
+CONTRACT_BINARY="artifacts/htcl.wasm"
+sudo osmosisd tx wasm store $CONTRACT_BINARY \
+        --from $WALLET_NAME \
+        --chain-id $OSMOSIS_TESTNET_CHAIN_ID \
+        --node $OSMOSIS_TESTNET_RPC \
+        --gas $GAS_LIMIT \
+        --gas-adjustment $GAS_ADJUSTMENT \
+        --gas-prices $OSMOSIS_TESTNET_GAS_PRICES \
+        --keyring-backend test \
+        --output json \
+        --yes
+
+CODE_ID=12789

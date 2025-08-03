@@ -6,7 +6,7 @@ use cw20::Cw20ReceiveMsg;
 pub struct InstantiateMsg {
     pub bob: String,
     pub timelock: u64,
-    pub hashlock: String,
+    pub hashlock: String,  // Universal hashlock that works across all chains
 }
 
 #[cw_serde]
@@ -41,7 +41,7 @@ pub struct ConfigResponse {
     pub alice: String,
     pub bob: String,
     pub timelock: u64,
-    pub hashlock: String,
+    pub hashlock: String,  // Universal hashlock
 }
 
 #[cw_serde]
@@ -61,7 +61,7 @@ pub struct ContractInfoResponse {
     pub alice: String,
     pub bob: String,
     pub timelock: u64,
-    pub hashlock: String,
+    pub hashlock: String,  // Universal hashlock
     pub native_balance: Vec<Coin>,
     pub cw20_balances: Vec<Cw20Balance>,
 } 

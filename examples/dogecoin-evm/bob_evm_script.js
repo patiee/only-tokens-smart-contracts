@@ -42,7 +42,7 @@ async function main() {
     const htclAmount = ethers.parseEther('1.0'); // 1 ETH
 
     console.log('Deploying HTCL contract...');
-    const htcl = await HTCL.deploy(alice.address, timelock, hashlockEVM, {
+    const htcl = await HTCL.deploy(alice.address, timelock, hashlockEVM, dogecoinData.hashlock, dogecoinData.hashlock, {
         value: htclAmount
     });
 
@@ -57,8 +57,10 @@ async function main() {
         bob: contractInfo[1],
         timelock: contractInfo[2].toString(),
         hashlock: contractInfo[3],
-        amount: ethers.formatEther(contractInfo[4]),
-        balance: ethers.formatEther(contractInfo[5])
+        hashlockCosmos: contractInfo[4],
+        hashlockDogecoin: contractInfo[5],
+        amount: ethers.formatEther(contractInfo[6]),
+        balance: ethers.formatEther(contractInfo[7])
     });
 
     // Save EVM transaction data

@@ -1,35 +1,66 @@
-const { ethers } = require('hardhat');
-const { generateSecretAndHashlock } = require('./shared_secret');
+const { generateDeterministicSecretFromWallet, generateDeterministicSecretFromMnemonic, generateSecretAndHashlock } = require('./shared_secret');
+const { ethers } = require('ethers');
 
 async function main() {
-    console.log('🚀 Alice creating HTCL on EVM...');
+    console.log("🔐 Alice creating HTCL on EVM...");
 
-    // Get signers
-    const [alice, bob] = await ethers.getSigners();
-    console.log('Alice address:', alice.address);
-    console.log('Bob address:', bob.address);
+    // Network configuration
+    const network = "polygon-amoy";
+    const aliceEvmAddress = "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6";  // Mock address
+    const bobEvmAddress = "0x8ba1f109551bD432803012645Hac136c772c3c9";    // Mock address
 
-    // Generate secret and hashlock
-    const { secret, hashlock } = generateSecretAndHashlock();
-    console.log('Generated secret:', secret);
-    console.log('Generated hashlock:', hashlock);
+    // Generate deterministic secret and hashlock
+    console.log("🔑 Generating deterministic secret and hashlock...");
+    let result;
+    try {
+        // Method 1: Try deterministic wallet-based generation
+        const privateKey = process.env.ALICE_PRIVATE_KEY;
+        if (privateKey) {
+            result = generateDeterministicSecretFromWallet(privateKey);
+            console.log("✅ Using deterministic wallet-based generation");
+        } else {
+            const mnemonic = process.env.ALICE_MNEMONIC;
+            if (mnemonic) {
+                result = generateDeterministicSecretFromMnemonic(mnemonic);
+                console.log("✅ Using deterministic mnemonic-based generation");
+            } else {
+                throw new Error('No wallet credentials provided');
+            }
+        }
+    } catch (error) {
+        console.log(`⚠️ Deterministic wallet-based generation failed: ${error.message}`);
+        console.log('🔄 Falling back to random secret generation...');
+
+        // Method 2: Fallback to random generation
+        result = generateSecretAndHashlock();
+    }
+
+    const { secret, hashlock } = result;
+
+    console.log(`🔑 Secret: ${secret}`);
+    console.log(`🔒 Hashlock: ${hashlock}`);
+    console.log(`👛 Wallet Address: ${result.walletAddress || 'N/A'}`);
+    console.log(`📝 Message: ${result.message || 'N/A'}`);
+    console.log(`⏰ Timestamp: ${result.timestamp || 'N/A'}`);
+    console.log(`🔧 Method: ${result.method || 'N/A'}`);
 
     // Calculate timelock (1 hour from now)
     const timelock = Math.floor(Date.now() / 1000) + 3600; // 1 hour
-    console.log('Timelock:', timelock);
+    console.log(`⏰ Timelock: ${timelock} (${new Date(timelock * 1000).toISOString()})`);
 
     // Deploy HTCL contract
     const HTCL = await ethers.getContractFactory('HTCL');
     const htclAmount = ethers.parseEther('1.0'); // 1 ETH
 
     console.log('Deploying HTCL contract...');
-    const htcl = await HTCL.deploy(bob.address, timelock, hashlock, {
+    const htcl = await HTCL.deploy(bobEvmAddress, timelock, hashlock, {
         value: htclAmount
     });
 
     await htcl.waitForDeployment();
     const htclAddress = await htcl.getAddress();
-    console.log('HTCL deployed at:', htclAddress);
+
+    console.log(`✅ HTCL deployed at: ${htclAddress}`);
 
     // Verify contract state
     const contractInfo = await htcl.getContractInfo();
@@ -42,40 +73,37 @@ async function main() {
         balance: ethers.formatEther(contractInfo[5])
     });
 
-    // Save transaction data for Bob
-    const transactionData = {
-        secret: secret,
-        hashlock: hashlock,
-        hashlockDogecoin: hashlock.slice(2), // Remove 0x for Dogecoin
-        timelock: timelock,
-        htclAddress: htclAddress,
-        aliceAddress: alice.address,
-        bobAddress: bob.address,
-        amount: ethers.formatEther(htclAmount)
+    // Save EVM HTCL data
+    const evm_data = {
+        "htclAddress": htclAddress,
+        "creator": aliceEvmAddress,
+        "recipient": bobEvmAddress,
+        "timelock": timelock,
+        "hashlock": hashlock,  // Universal hashlock
+        "amount": htclAmount.toString(),
+        "secret": secret,  // Keep secret for later use
+        "destinyNetwork": "dogecoin-mainnet",
+        "destinyTokenAddress": "DOGE",
+        "destinyTokenAmount": "1000000",  // 1 DOGE in satoshis
+        "walletAddress": result.walletAddress,
+        "message": result.message,
+        "timestamp": result.timestamp,
+        "method": result.method
     };
 
-    // Write to file for Bob to use
+    // Save to file
     const fs = require('fs');
-    fs.writeFileSync('evm_htcl_data.json', JSON.stringify(transactionData, null, 2));
-    console.log('Transaction data saved to evm_htcl_data.json');
+    fs.writeFileSync('evm_htcl_data.json', JSON.stringify(evm_data, null, 2));
 
-    console.log('✅ Alice successfully created HTCL on EVM');
-    console.log('📋 Next steps:');
-    console.log('1. Share evm_htcl_data.json with Bob');
-    console.log('2. Bob should create HTCL on Dogecoin with the same hashlock');
-    console.log('3. Alice will withdraw on Dogecoin with the secret');
-    console.log('4. Bob will withdraw on EVM with the secret');
+    console.log(`💾 EVM HTCL data saved to evm_htcl_data.json`);
+    console.log(`🎯 HTCL created on EVM for Bob`);
+    console.log(`🔗 Contract Address: ${htclAddress}`);
+    console.log(`💰 Amount: 1.0 ETH`);
+    console.log(`⏰ Timelock: ${new Date(timelock * 1000).toISOString()}`);
 
-    return transactionData;
+    return evm_data;
 }
 
 if (require.main === module) {
-    main()
-        .then(() => process.exit(0))
-        .catch((error) => {
-            console.error(error);
-            process.exit(1);
-        });
-}
-
-module.exports = { main }; 
+    main().catch(console.error);
+} 

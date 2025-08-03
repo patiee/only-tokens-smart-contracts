@@ -1,0 +1,31 @@
+[package]
+name = "htcl-contract"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cosmwasm-schema = "2.2.0"
+cosmwasm-std = { version = "2.2.0", features = [
+  "cosmwasm_1_4",
+  # Enable this if you only deploy to chains that have CosmWasm 2.0 or higher
+  # "cosmwasm_2_0",
+  # Or this if you only deploy to chains that have CosmWasm 2.1 or higher
+  # "cosmwasm_2_1",
+] }
+cw-storage-plus = "2.0.0"
+cw-multi-test = "3.0.1"
+cw2 = "2.0.0"
+cw20 = "2.0.0"
+sha2 = "0.10.9"
+hex = "0.4.3"
+schemars = "0.8.16"
+serde = { version = "1.0.197", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.58" }
+
+[dev-dependencies]
+anyhow = "1.0"
+cosmwasm-schema = "1.5"
+cw-multi-test = "0.21" 

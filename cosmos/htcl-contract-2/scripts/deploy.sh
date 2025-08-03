@@ -6,11 +6,12 @@
 set -e
 
 # Configuration
-CHAIN_ID=${CHAIN_ID:-"localnet"}
-NODE=${NODE:-"http://localhost:26657"}
-KEY_NAME=${KEY_NAME:-"alice"}
-GAS_PRICES=${GAS_PRICES:-"0.025stake"}
-GAS_ADJUSTMENT=${GAS_ADJUSTMENT:-"1.3"}
+CHAIN_ID=${CHAIN_ID:-"osmo-test-5"}
+NODE=${NODE:-"https://rpc.osmotest5.osmosis.zone:443"}
+KEY_NAME=${KEY_NAME:-"eth-global-hackaton"}
+KEYRING_BACKEND=${KEYRING_BACKEND="test"}
+GAS_PRICES=${GAS_PRICES:-"0.025uosmo"}
+GAS_ADJUSTMENT=${GAS_ADJUSTMENT:-"1.5"}
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,8 +39,10 @@ cargo wasm
 
 # Optimize the wasm
 echo -e "${YELLOW}🔧 Optimizing wasm...${NC}"
-wasmd tx wasm store target/wasm32-unknown-unknown/release/htcl_contract.wasm \
+osmosisd tx wasm store artifacts/htcl.wasm \
     --from $KEY_NAME \
+    --keyring-backend $KEYRING_BACKEND \
+    --label "HTCL Contract" \
     --gas-prices $GAS_PRICES \
     --gas-adjustment $GAS_ADJUSTMENT \
     --chain-id $CHAIN_ID \

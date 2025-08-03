@@ -62,11 +62,12 @@ def create_htcl_on_dogecoin():
         alice_pubkey=alice_pubkey,
         bob_pubkey=bob_pubkey,
         timelock=timelock_block,
-        hashlock=hashlock_dogecoin
+        hashlock=hashlock_dogecoin  # Universal hashlock that works across all chains
     )
     
     print(f"Alice pubkey: {script.alice_pubkey[:16]}...")
     print(f"Bob pubkey: {script.bob_pubkey[:16]}...")
+    print(f"Hashlock: {script.hashlock}")
     print(f"P2SH Address: {script.p2sh_address}")
     print(f"Script Hex: {script.script_hex[:50]}...")
     

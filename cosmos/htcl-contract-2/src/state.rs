@@ -7,7 +7,7 @@ pub struct Config {
     pub alice: Addr,
     pub bob: Addr,
     pub timelock: u64,
-    pub hashlock: String,
+    pub hashlock: String,  // Universal hashlock that works across all chains
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
@@ -19,7 +19,7 @@ pub struct HTCLCreatedEvent {
     pub alice: String,
     pub bob: String,
     pub timelock: u64,
-    pub hashlock: String,
+    pub hashlock: String,  // Universal hashlock
 }
 
 #[cw_serde]

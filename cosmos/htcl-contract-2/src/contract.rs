@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
-    WasmMsg, Uint128,
+    Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use sha2::{Digest, Sha256};
@@ -96,7 +96,7 @@ pub fn execute_bob_withdraw(
     let mut hasher = Sha256::new();
     hasher.update(secret.as_bytes());
     let secret_hash = format!("{:x}", hasher.finalize());
-    
+
     if secret_hash != config.hashlock {
         return Err(ContractError::InvalidSecret {});
     }
@@ -109,7 +109,9 @@ pub fn execute_bob_withdraw(
     let mut cw20_withdrawals = Vec::new();
     let mut cw20_messages = Vec::new();
 
-    for (token_addr, amount) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+    for (token_addr, amount) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         if amount > Uint128::zero() {
             cw20_withdrawals.push(Cw20Withdrawal {
                 token: token_addr.to_string(),
@@ -133,7 +135,9 @@ pub fn execute_bob_withdraw(
     }
 
     // Clear cw20 balances
-    for (token_addr, _) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+    for (token_addr, _) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         CW20_BALANCES.remove(deps.storage, &token_addr);
     }
 
@@ -186,7 +190,9 @@ pub fn execute_alice_withdraw(
     let mut cw20_withdrawals = Vec::new();
     let mut cw20_messages = Vec::new();
 
-    for (token_addr, amount) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+    for (token_addr, amount) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         if amount > Uint128::zero() {
             cw20_withdrawals.push(Cw20Withdrawal {
                 token: token_addr.to_string(),
@@ -210,7 +216,9 @@ pub fn execute_alice_withdraw(
     }
 
     // Clear cw20 balances
-    for (token_addr, _) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+    for (token_addr, _) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         CW20_BALANCES.remove(deps.storage, &token_addr);
     }
 
@@ -246,8 +254,10 @@ pub fn execute_receive_cw20(
     // Store the cw20 tokens
     let token_addr = info.sender;
     let amount = cw20_msg.amount;
-    
-    let current_balance = CW20_BALANCES.load(deps.storage, &token_addr).unwrap_or(Uint128::zero());
+
+    let current_balance = CW20_BALANCES
+        .load(deps.storage, &token_addr)
+        .unwrap_or(Uint128::zero());
     CW20_BALANCES.save(deps.storage, &token_addr, &(current_balance + amount))?;
 
     Ok(Response::new()
@@ -279,8 +289,10 @@ fn query_config(deps: Deps) -> StdResult<crate::msg::ConfigResponse> {
 
 fn query_balance(deps: Deps) -> StdResult<crate::msg::BalanceResponse> {
     let mut cw20_balances = Vec::new();
-    
-    for (token_addr, amount) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+
+    for (token_addr, amount) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         if amount > Uint128::zero() {
             cw20_balances.push(crate::msg::Cw20Balance {
                 address: token_addr.to_string(),
@@ -302,24 +314,29 @@ fn query_timelock_expired(deps: Deps, env: cosmwasm_std::Env) -> StdResult<bool>
 
 fn query_valid_secret(deps: Deps, secret: String) -> StdResult<bool> {
     let config = CONFIG.load(deps.storage)?;
-    
+
     let mut hasher = Sha256::new();
     hasher.update(secret.as_bytes());
     let secret_hash = format!("{:x}", hasher.finalize());
-    
+
     Ok(secret_hash == config.hashlock)
 }
 
-fn query_contract_info(deps: Deps, env: cosmwasm_std::Env) -> StdResult<crate::msg::ContractInfoResponse> {
+fn query_contract_info(
+    deps: Deps,
+    env: cosmwasm_std::Env,
+) -> StdResult<crate::msg::ContractInfoResponse> {
     let config = CONFIG.load(deps.storage)?;
-    
+
     // Get native balance
     let native_balance = env.contract_address;
     let native_coins = deps.querier.query_all_balances(&native_balance)?;
 
     // Get cw20 balances
     let mut cw20_balances = Vec::new();
-    for (token_addr, amount) in CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
+    for (token_addr, amount) in
+        CW20_BALANCES.range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+    {
         if amount > Uint128::zero() {
             cw20_balances.push(crate::msg::Cw20Balance {
                 address: token_addr.to_string(),
@@ -336,4 +353,4 @@ fn query_contract_info(deps: Deps, env: cosmwasm_std::Env) -> StdResult<crate::m
         native_balance: native_coins,
         cw20_balances,
     })
-} 
+}

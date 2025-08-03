@@ -98,7 +98,7 @@ pub fn execute(
 
 pub fn execute_bob_withdraw(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     secret: String,
 ) -> Result<Response, ContractError> {
@@ -107,11 +107,6 @@ pub fn execute_bob_withdraw(
     // Check if caller is Bob
     if info.sender != config.bob {
         return Err(ContractError::Unauthorized {});
-    }
-
-    // Check if timelock has expired
-    if env.block.time.seconds() >= config.timelock {
-        return Err(ContractError::TimelockExpired {});
     }
 
     // Validate secret

@@ -74,6 +74,7 @@ async function main() {
     console.log('Bob:', contractInfo[1]);
     console.log('Timelock:', contractInfo[2].toString());
     console.log('Hashlock:', contractInfo[3]);
+    console.log('Amount:', ethers.formatEther(contractInfo[4]));
     console.log('Balance:', ethers.formatEther(contractInfo[5]));
 
     // Check if timelock has expired
