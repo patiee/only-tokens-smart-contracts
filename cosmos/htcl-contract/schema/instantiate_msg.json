@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "InstantiateMsg",
+    "type": "object",
+    "required": [
+        "bob",
+        "timelock",
+        "hashlock"
+    ],
+    "properties": {
+        "bob": {
+            "description": "The address of Bob (recipient)",
+            "type": "string"
+        },
+        "timelock": {
+            "description": "Unix timestamp when the timelock expires",
+            "type": "integer",
+            "minimum": 0
+        },
+        "hashlock": {
+            "description": "SHA256 hash of the secret that Bob must provide",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+        }
+    }
+}
